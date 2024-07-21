@@ -1,0 +1,1017 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Shampoo",
+    LoadingTitle = "Bhoping....",
+    LoadingSubtitle = "by 910f",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = nil,
+        FileName = "SHAMPOO"
+    },
+    Discord = {
+        Enabled = true,
+        Invite = "Vp5wqNTqeK",
+        RememberJoins = false
+    },
+    KeySystem = true,
+    KeySettings = {
+        Title = "key?",
+        Subtitle = "Key System",
+        Note = "join dc for key",
+        FileName = "key",
+        SaveKey = true,
+        GrabKeyFromSite = false,
+        Key = {"bruh"}
+    }
+})
+
+local GunTab = Window:CreateTab("Gun", 4483362458)
+local PlayerTab = Window:CreateTab("Player", 4483362458)
+local VisualTab = Window:CreateTab("Visual", 4483362458)
+local SettingsTab = Window:CreateTab("Settings")
+
+local AimbotEnabled = false
+local TeamCheck = true
+local AimPart = "Head"
+local AimbotFOV = 100
+local AimbotCircleVisible = false
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+local Camera = workspace.CurrentCamera
+
+local function IsOnDifferentTeam(player)
+    return player.Team ~= LocalPlayer.Team
+end
+
+local function isBehindWall(targetPlayer)
+    if not LocalPlayer.Character or not targetPlayer.Character then
+        return false
+    end
+
+    local playerRoot = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local targetRoot = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+
+    if not playerRoot or not targetRoot then
+        return false
+    end
+
+    local direction = (targetRoot.Position - playerRoot.Position).unit
+    local distance = (targetRoot.Position - playerRoot.Position).magnitude
+    local ray = Ray.new(playerRoot.Position, direction * distance)
+    local hit, position = workspace:FindPartOnRay(ray, LocalPlayer.Character)
+
+    if hit and not hit:IsDescendantOf(targetPlayer.Character) then
+        return true
+    else
+        return false
+    end
+end
+
+local function GetClosestPlayer()
+    local closestPlayer = nil
+    local shortestDistance = AimbotFOV
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(AimPart) then
+            if (not TeamCheck or IsOnDifferentTeam(player)) and not isBehindWall(player) then
+                local partPos = Camera:WorldToViewportPoint(player.Character[AimPart].Position)
+                local distance = (Vector2.new(partPos.X, partPos.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
+
+                if distance < shortestDistance then
+                    closestPlayer = player
+                    shortestDistance = distance
+                end
+            end
+        end
+    end
+
+    return closestPlayer
+end
+
+local AimbotCircle = Drawing.new("Circle")
+AimbotCircle.Radius = AimbotFOV
+AimbotCircle.Color = Color3.fromRGB(255, 0, 0)
+AimbotCircle.Visible = AimbotCircleVisible
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    if AimbotEnabled and Mouse.Target then
+        local target = GetClosestPlayer()
+
+        if target and target.Character and target.Character:FindFirstChild(AimPart) then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character[AimPart].Position)
+        end
+    end
+    AimbotCircle.Position = Vector2.new(Mouse.X, Mouse.Y + 36)
+end)
+
+local ToggleAimbot = GunTab:CreateToggle({
+    Name = "Aimbot",
+    CurrentValue = false,
+    Flag = "ToggleAimbot",
+    Callback = function(Value)
+        AimbotEnabled = Value
+    end,
+})
+
+local SliderAimbotFOV = GunTab:CreateSlider({
+    Name = "Aimbot FOV",
+    Range = {10, 500},
+    Increment = 10,
+    Suffix = "FOV",
+    CurrentValue = AimbotFOV,
+    Flag = "SliderAimbotFOV",
+    Callback = function(Value)
+        AimbotFOV = Value
+        AimbotCircle.Radius = AimbotFOV
+    end,
+})
+
+local ToggleAimbotCircle = GunTab:CreateToggle({
+    Name = "Aimbot Circle",
+    CurrentValue = false,
+    Flag = "ToggleAimbotCircle",
+    Callback = function(Value)
+        AimbotCircleVisible = Value
+        AimbotCircle.Visible = AimbotCircleVisible
+    end,
+})
+
+local infAmmoActive = false
+local bhopActive = false
+local rapidFireActive = false
+local automaticFireActive = false
+local noRecoilActive = false
+local noSpreadActive = false
+local rainbowWeaponsActive = false
+local critActive = false
+local espBoxActive = false
+local espNameActive = false
+local tracersActive = false
+local infiniteJumpActive = false
+local flyActive = false
+local noclipActive = false
+local headbot = false
+
+local function resetWeaponProperties()
+    for _, v in pairs(game.ReplicatedStorage.Weapons:GetDescendants()) do
+        if v.Name == "FireRate" then
+            v.Value = 1
+        elseif v.Name == "Automatic" then
+            v.Value = false
+        elseif v.Name == "Recoil" then
+            v.Value = 1
+        elseif v.Name == "Spread" then
+            v.Value = 1
+        elseif v.Name == "Critical" then
+            v.Value = false
+        end
+    end
+end
+
+local ToggleInfAmmo = GunTab:CreateToggle({
+    Name = "Infinite Ammo",
+    CurrentValue = false,
+    Flag = "ToggleInfAmmo",
+    Callback = function(Value)
+        infAmmoActive = Value
+        if infAmmoActive then
+            spawn(function()
+                while infAmmoActive do
+                    game:GetService("Players").LocalPlayer.PlayerGui.GUI.Client.Variables.ammocount.Value = 999
+                    game:GetService("Players").LocalPlayer.PlayerGui.GUI.Client.Variables.ammocount2.Value = 999
+                    wait(0.1)
+                end
+            end)
+        end
+    end,
+})
+
+local ToggleBhop = PlayerTab:CreateToggle({
+    Name = "Bhop",
+    CurrentValue = false,
+    Flag = "ToggleBhop",
+    Callback = function(Value)
+        bhopActive = Value
+        if bhopActive then
+            local player = game.Players.LocalPlayer
+            local character = player.Character or player.CharacterAdded:Wait()
+            local humanoid = character:WaitForChild("Humanoid")
+
+            spawn(function()
+                while bhopActive do
+                    humanoid.Jump = true
+                    wait(0.1)
+                end
+            end)
+        end
+    end,
+})
+
+local ToggleRapidFire = GunTab:CreateToggle({
+    Name = "Rapid Fire",
+    CurrentValue = false,
+    Flag = "ToggleRapidFire",
+    Callback = function(Value)
+        rapidFireActive = Value
+        if rapidFireActive then
+            for _, v in pairs(game.ReplicatedStorage.Weapons:GetDescendants()) do
+                if v.Name == "FireRate" then
+                    v.Value = 0.05
+                elseif v.Name == "Automatic" then
+                    v.Value = true
+                end
+            end
+        else
+            resetWeaponProperties()
+        end
+    end,
+})
+
+local ToggleAutomaticFire = GunTab:CreateToggle({
+    Name = "Automatic Fire",
+    CurrentValue = false,
+    Flag = "ToggleAutomaticFire",
+    Callback = function(Value)
+        automaticFireActive = Value
+        if automaticFireActive then
+            for _, v in pairs(game.ReplicatedStorage.Weapons:GetDescendants()) do
+                if v.Name == "Automatic" then
+                    v.Value = true
+                end
+            end
+        else
+            resetWeaponProperties()
+        end
+    end,
+})
+
+local ToggleNoRecoil = GunTab:CreateToggle({
+    Name = "No Recoil",
+    CurrentValue = false,
+    Flag = "ToggleNoRecoil",
+    Callback = function(Value)
+        noRecoilActive = Value
+        if noRecoilActive then
+            for _, v in pairs(game.ReplicatedStorage.Weapons:GetDescendants()) do
+                if v.Name == "Recoil" then
+                    v.Value = 0
+                end
+            end
+        else
+            resetWeaponProperties()
+        end
+    end,
+})
+
+local ToggleNoSpread = GunTab:CreateToggle({
+    Name = "No Spread",
+    CurrentValue = false,
+    Flag = "ToggleNoSpread",
+    Callback = function(Value)
+        noSpreadActive = Value
+        if noSpreadActive then
+            for _, v in pairs(game.ReplicatedStorage.Weapons:GetDescendants()) do
+                if v.Name == "Spread" then
+                    v.Value = 0
+                end
+            end
+        else
+            resetWeaponProperties()
+        end
+    end,
+})
+
+local rainbowWeaponsConnection
+local ToggleRainbowWeapons = VisualTab:CreateToggle({
+    Name = "Rainbow Weapons",
+    CurrentValue = false,
+    Flag = "ToggleRainbowWeapons",
+    Callback = function(Value)
+        rainbowWeaponsActive = Value
+        if rainbowWeaponsActive then
+            rainbowWeaponsConnection = game:GetService("RunService").RenderStepped:Connect(function()
+                if game.Workspace.Camera:FindFirstChild("Arms") then
+                    for _, v in pairs(game.Workspace.Camera.Arms:GetDescendants()) do
+                        if v.ClassName == "MeshPart" then
+                            v.Color = Color3.fromHSV(tick() % 10 / 10, 1, 1)
+                        end
+                    end
+                end
+            end)
+        elseif rainbowWeaponsConnection then
+            rainbowWeaponsConnection:Disconnect()
+        end
+    end,
+})
+
+local ToggleCrit = GunTab:CreateToggle({
+    Name = "Critical Hits",
+    CurrentValue = false,
+    Flag = "ToggleCrit",
+    Callback = function(Value)
+        critActive = Value
+        if critActive then
+            for _, v in pairs(game.ReplicatedStorage.Weapons:GetDescendants()) do
+                if v.Name == "Critical" then
+                    v.Value = true
+                end
+            end
+        else
+            resetWeaponProperties()
+        end
+    end,
+})
+
+local espBoxConnections = {}
+local tracersConnections = {}
+local nameEspConnections = {}
+local healEspConnections = {}
+
+local ESPBoxColor = Color3.fromRGB(255, 255, 255)
+local ESPNameColor = Color3.fromRGB(255, 255, 255)
+local ESPTracersColor = Color3.fromRGB(255, 255, 255)
+local ESPHealColor = Color3.fromRGB(0, 255, 0)
+
+local function updateESPColors()
+    for _, connection in ipairs(espBoxConnections) do
+        if connection.boxOutline then
+            connection.boxOutline.Color = ESPBoxColor
+        end
+    end
+    for _, connection in ipairs(nameEspConnections) do
+        if connection.textName then
+            connection.textName.Color = ESPNameColor
+        end
+    end
+    for _, connection in ipairs(tracersConnections) do
+        if connection.tracer then
+            connection.tracer.Color = ESPTracersColor
+        end
+    end
+    for _, connection in ipairs(healEspConnections) do
+        if connection.healText then
+            connection.healText.Color = ESPHealColor
+        end
+    end
+end
+
+local function createBoxESP(player)
+    local boxOutline = Drawing.new("Square")
+    boxOutline.Thickness = 1
+    boxOutline.Color = ESPBoxColor
+    boxOutline.Transparency = 1
+    boxOutline.Filled = false
+
+    local function update()
+        if espBoxActive and player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Head") then
+            if not IsOnDifferentTeam(player) then
+                boxOutline.Visible = false
+                return
+            end
+
+            local rootPart = player.Character.HumanoidRootPart
+            local head = player.Character.Head
+
+            local screenPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
+            local headPos = workspace.CurrentCamera:WorldToViewportPoint(head.Position + Vector3.new(0, 2, 0))
+
+            if onScreen then
+                boxOutline.Size = Vector2.new(2000 / screenPos.Z, headPos.Y - screenPos.Y)
+                boxOutline.Position = Vector2.new(screenPos.X - boxOutline.Size.X / 2, screenPos.Y - boxOutline.Size.Y / 2)
+                boxOutline.Visible = true
+            else
+                boxOutline.Visible = false
+            end
+        else
+            boxOutline.Visible = false
+        end
+    end
+
+    table.insert(espBoxConnections, { connection = game:GetService("RunService").RenderStepped:Connect(update), boxOutline = boxOutline })
+
+    game.Players.PlayerRemoving:Connect(function(removingPlayer)
+        if removingPlayer == player then
+            boxOutline.Visible = false
+        end
+    end)
+end
+
+local function createTracerESP(player)
+    local tracer = Drawing.new("Line")
+    tracer.Thickness = 1
+    tracer.Color = ESPTracersColor
+    tracer.Transparency = 1
+    tracer.Visible = false
+
+    local function update()
+        if tracersActive and player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            if not IsOnDifferentTeam(player) then
+                tracer.Visible = false
+                return
+            end
+
+            local humanoidRootPart = player.Character.HumanoidRootPart
+            local screenPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(humanoidRootPart.Position)
+
+            if onScreen then
+                tracer.From = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y)
+                tracer.To = Vector2.new(screenPos.X, screenPos.Y)
+                tracer.Visible = true
+            else
+                tracer.Visible = false
+            end
+        else
+            tracer.Visible = false
+        end
+    end
+
+    table.insert(tracersConnections, { connection = game:GetService("RunService").RenderStepped:Connect(update), tracer = tracer })
+
+    player.CharacterAdded:Connect(function()
+        tracer.Visible = false
+    end)
+
+    game.Players.PlayerRemoving:Connect(function(removingPlayer)
+        if removingPlayer == player then
+            tracer.Visible = false
+        end
+    end)
+end
+
+local function createNameESP(player)
+    local textName = Drawing.new("Text")
+    textName.Size = 18
+    textName.Center = true
+    textName.Outline = true
+    textName.Color = ESPNameColor
+    textName.Transparency = 1
+
+    local function update()
+        if espNameActive and player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            if not IsOnDifferentTeam(player) then
+                textName.Visible = false
+                return
+            end
+
+            local rootPart = player.Character.HumanoidRootPart
+
+            local screenPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
+
+            if onScreen then
+                textName.Position = Vector2.new(screenPos.X, screenPos.Y - 50)
+                textName.Text = player.Name
+                textName.Visible = true
+            else
+                textName.Visible = false
+            end
+        else
+            textName.Visible = false
+        end
+    end
+
+    table.insert(nameEspConnections, { connection = game:GetService("RunService").RenderStepped:Connect(update), textName = textName })
+
+    game.Players.PlayerRemoving:Connect(function(removingPlayer)
+        if removingPlayer == player then
+            textName.Visible = false
+        end
+    end)
+end
+
+local function createHealESP(player)
+    local healText = Drawing.new("Text")
+    healText.Size = 18
+    healText.Center = true
+    healText.Outline = true
+    healText.Color = ESPHealColor
+    healText.Transparency = 1
+
+    local function update()
+        if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            if not IsOnDifferentTeam(player) then
+                healText.Visible = false
+                return
+            end
+
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid and humanoid.Health < humanoid.MaxHealth then
+                local rootPart = player.Character.HumanoidRootPart
+                local screenPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
+
+                if onScreen then
+                    healText.Position = Vector2.new(screenPos.X, screenPos.Y - 100)
+                    healText.Text = "Heal: " .. math.floor(humanoid.Health)
+                    healText.Visible = true
+                else
+                    healText.Visible = false
+                end
+            else
+                healText.Visible = false
+            end
+        else
+            healText.Visible = false
+        end
+    end
+
+    table.insert(healEspConnections, { connection = game:GetService("RunService").RenderStepped:Connect(update), healText = healText })
+
+    game.Players.PlayerRemoving:Connect(function(removingPlayer)
+        if removingPlayer == player then
+            healText.Visible = false
+        end
+    end)
+end
+
+local function onPlayerAdded(player)
+    if player ~= game.Players.LocalPlayer then
+        player.CharacterAdded:Connect(function(character)
+            createBoxESP(player)
+            createTracerESP(player)
+            createNameESP(player)
+            createHealESP(player)
+        end)
+        if player.Character then
+            createBoxESP(player)
+            createTracerESP(player)
+            createNameESP(player)
+            createHealESP(player)
+        end
+    end
+end
+
+local function toggleESP(enabled)
+    espBoxActive = enabled
+    if not espBoxActive then
+        for _, connection in ipairs(espBoxConnections) do
+            connection.connection:Disconnect()
+            connection.boxOutline.Visible = false
+        end
+        espBoxConnections = {}
+    else
+        for _, player in ipairs(game.Players:GetPlayers()) do
+            onPlayerAdded(player)
+        end
+        game.Players.PlayerAdded:Connect(onPlayerAdded)
+    end
+end
+
+local Toggleheaddot = VisualTab:CreateToggle({
+    Name = "Head Dot",
+    CurrentValue = false,
+    Flag = "Toggleheaddot",
+    Callback = function(Value)
+        local Players = game:GetService("Players")
+        local RunService = game:GetService("RunService")
+        local LocalPlayer = Players.LocalPlayer
+
+        -- Function to create ESP for a character
+        local function createESP(character)
+            if not rainbowWeaponsActive then return end
+            local parts = {"Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"}
+            for _, partName in ipairs(parts) do
+                local part = character:FindFirstChild(partName)
+                if part then
+                    local box = Instance.new("BoxHandleAdornment")
+                    box.Size = part.Size
+                    box.Adornee = part
+                    box.AlwaysOnTop = true
+                    box.ZIndex = 5
+                    box.Transparency = 0.5
+                    box.Color3 = Color3.new(1, 0, 0)
+                    box.Parent = part
+                end
+            end
+        end
+
+        -- Function to remove ESP from a character
+        local function removeESP(character)
+            for _, adornment in ipairs(character:GetDescendants()) do
+                if adornment:IsA("BoxHandleAdornment") then
+                    adornment:Destroy()
+                end
+            end
+        end
+
+        -- Function to check team and add/remove ESP if on opposite team
+        local function checkTeamAndAddOrRemoveESP(player)
+            if player.Team ~= LocalPlayer.Team then
+                local character = player.Character or player.CharacterAdded:Wait()
+                if rainbowWeaponsActive then
+                    createESP(character)
+                else
+                    removeESP(character)
+                end
+            end
+        end
+
+        -- Add or remove ESP for existing players
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                checkTeamAndAddOrRemoveESP(player)
+            end
+        end
+
+        -- Add or remove ESP for new players
+        Players.PlayerAdded:Connect(function(player)
+            if player ~= LocalPlayer then
+                player.CharacterAdded:Connect(function(character)
+                    checkTeamAndAddOrRemoveESP(player)
+                end)
+            end
+        end)
+
+        -- Update ESP for respawned characters
+        Players.PlayerRemoving:Connect(function(player)
+            if player ~= LocalPlayer then
+                local character = player.Character or player.CharacterAdded:Wait()
+                removeESP(character)
+            end
+        end)
+
+        -- Update ESP on team change
+        LocalPlayer:GetPropertyChangedSignal("Team"):Connect(function()
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer then
+                    -- Remove existing ESP
+                    local character = player.Character or player.CharacterAdded:Wait()
+                    removeESP(character)
+                    -- Add new ESP if on opposite team and toggle is active
+                    checkTeamAndAddOrRemoveESP(player)
+                end
+            end
+        end)
+
+    end,
+})
+
+local function toggleNameESP(enabled)
+    espNameActive = enabled
+    if not espNameActive then
+        for _, connection in ipairs(nameEspConnections) do
+            connection.connection:Disconnect()
+            connection.textName.Visible = false
+        end
+        nameEspConnections = {}
+    else
+        for _, player in ipairs(game.Players:GetPlayers()) do
+            onPlayerAdded(player)
+        end
+        game.Players.PlayerAdded:Connect(onPlayerAdded)
+    end
+end
+
+local function toggleTracers(enabled)
+    tracersActive = enabled
+    if not tracersActive then
+        for _, connection in ipairs(tracersConnections) do
+            connection.connection:Disconnect()
+            connection.tracer.Visible = false
+        end
+        tracersConnections = {}
+    else
+        for _, player in ipairs(game.Players:GetPlayers()) do
+            onPlayerAdded(player)
+        end
+        game.Players.PlayerAdded:Connect(onPlayerAdded)
+    end
+end
+
+for _, player in ipairs(game.Players:GetPlayers()) do
+    onPlayerAdded(player)
+end
+
+game.Players.PlayerAdded:Connect(onPlayerAdded)
+
+local ToggleESP = VisualTab:CreateToggle({
+    Name = "Toggle ESP",
+    CurrentValue = false,
+    Flag = "ToggleESP",
+    Callback = function(Value)
+        toggleESP(Value)
+    end,
+})
+
+local ToggleNameESP = VisualTab:CreateToggle({
+    Name = "Toggle Name ESP",
+    CurrentValue = false,
+    Flag = "ToggleNameESP",
+    Callback = function(Value)
+        toggleNameESP(Value)
+    end,
+})
+
+local Toggleheaddot = VisualTab:CreateToggle({
+    Name = "head dot",
+    CurrentValue = false,
+    Flag = "Toggleheaddot",
+    Callback = function(Value)
+        toggleheaddot(Value)
+    end,
+})
+
+
+local ToggleTracers = VisualTab:CreateToggle({
+    Name = "Toggle Tracers",
+    CurrentValue = false,
+    Flag = "ToggleTracers",
+    Callback = function(Value)
+        toggleTracers(Value)
+    end,
+})
+
+local normalWalkSpeed = 25
+local desiredWalkSpeed = normalWalkSpeed
+
+local function setWalkSpeed(humanoid)
+    if humanoid and humanoid:IsA("Humanoid") then
+        humanoid.WalkSpeed = desiredWalkSpeed
+    end
+end
+
+local function onCharacterAdded(character)
+    local humanoid = character:WaitForChild("Humanoid")
+    setWalkSpeed(humanoid)
+    
+    humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+        if humanoid.WalkSpeed ~= desiredWalkSpeed then
+            humanoid.WalkSpeed = desiredWalkSpeed
+        end
+    end)
+end
+
+game.Players.LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+
+if game.Players.LocalPlayer.Character then
+    onCharacterAdded(game.Players.LocalPlayer.Character)
+end
+
+spawn(function()
+    while true do
+        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            local humanoid = game.Players.LocalPlayer.Character.Humanoid
+            if humanoid.WalkSpeed ~= desiredWalkSpeed then
+                humanoid.WalkSpeed = desiredWalkSpeed
+            end
+        end
+        wait(0.1)
+    end
+end)
+
+local Slider = SettingsTab:CreateSlider({
+    Name = "Walk Speed",
+    Range = {0, 100},
+    Increment = 1,
+    Suffix = "Speed",
+    CurrentValue = desiredWalkSpeed,
+    Flag = "SliderWalkSpeed",
+    Callback = function(Value)
+        desiredWalkSpeed = Value
+        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = desiredWalkSpeed
+        end
+    end,
+})
+
+local infiniteJumpConnection
+local ToggleInfiniteJump = PlayerTab:CreateToggle({
+    Name = "Infinite Jump",
+    CurrentValue = false,
+    Flag = "ToggleInfiniteJump",
+    Callback = function(Value)
+        infiniteJumpActive = Value
+        if infiniteJumpActive then
+            infiniteJumpConnection = game:GetService("UserInputService").JumpRequest:Connect(function()
+                if infiniteJumpActive then
+                    game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+                end
+            end)
+        elseif infiniteJumpConnection then
+            infiniteJumpConnection:Disconnect()
+        end
+    end,
+})
+
+local flyConnection
+local ToggleFly = PlayerTab:CreateToggle({
+    Name = "Fly",
+    CurrentValue = false,
+    Flag = "ToggleFly",
+    Callback = function(Value)
+        flyActive = Value
+        if flyActive then
+            local player = game.Players.LocalPlayer
+            local character = player.Character or player.CharacterAdded:Wait()
+            local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+            local flying = true
+            local flySpeed = 50
+
+            local function fly()
+                flyConnection = game:GetService("RunService").Stepped:Connect(function()
+                    if flyActive then
+                        humanoidRootPart.Velocity = Vector3.new(0, flySpeed, 0)
+                    else
+                        humanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+                    end
+                end)
+            end
+
+            fly()
+        elseif flyConnection then
+            flyConnection:Disconnect()
+        end
+    end,
+})
+
+local noclipConnection
+local ToggleNoclip = PlayerTab:CreateToggle({
+    Name = "Noclip",
+    CurrentValue = false,
+    Flag = "ToggleNoclip",
+    Callback = function(Value)
+        noclipActive = Value
+        if noclipActive then
+            noclipConnection = game:GetService("RunService").Stepped:Connect(function()
+                for _, v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                    if v:IsA("BasePart") then
+                        v.CanCollide = false
+                    end
+                end
+            end)
+        elseif noclipConnection then
+            noclipConnection:Disconnect()
+            for _, v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = true
+                end
+            end
+        end
+    end,
+})
+
+local ColorPickerESPBox = VisualTab:CreateColorPicker({
+    Name = "ESP Box Color",
+    Color = Color3.fromRGB(255, 255, 255),
+    Flag = "ColorPickerESPBox",
+    Callback = function(Value)
+        ESPBoxColor = Value
+        updateESPColors()
+    end,
+})
+
+local ColorPickerESPName = VisualTab:CreateColorPicker({
+    Name = "ESP Name Color",
+    Color = Color3.fromRGB(255, 255, 255),
+    Flag = "ColorPickerESPName",
+    Callback = function(Value)
+        ESPNameColor = Value
+        updateESPColors()
+    end,
+})
+
+local ColorPickerESPTracers = VisualTab:CreateColorPicker({
+    Name = "ESP Tracers Color",
+    Color = Color3.fromRGB(255, 255, 255),
+    Flag = "ColorPickerESPTracers",
+    Callback = function(Value)
+        ESPTracersColor = Value
+        updateESPColors()
+    end,
+})
+
+local ColorPickerESPHeal = VisualTab:CreateColorPicker({
+    Name = "ESP Heal Color",
+    Color = Color3.fromRGB(0, 255, 0),
+    Flag = "ColorPickerESPHeal",
+    Callback = function(Value)
+        ESPHealColor = Value
+        updateESPColors()
+    end,
+})
+
+local KeybindAimbot = GunTab:CreateKeybind({
+   Name = "Toggle Aimbot Keybind",
+   CurrentKeybind = "MouseButton2",
+   HoldToInteract = false,
+   Flag = "KeybindAimbot",
+   Callback = function()
+       AimbotEnabled = not AimbotEnabled
+   end,
+})
+
+local KeybindESP = VisualTab:CreateKeybind({
+   Name = "Toggle ESP Keybind",
+   CurrentKeybind = "E",
+   HoldToInteract = false,
+   Flag = "KeybindESP",
+   Callback = function()
+       toggleESP(not espBoxActive)
+   end,
+})
+
+local KeybindNameESP = VisualTab:CreateKeybind({
+   Name = "Toggle Name ESP Keybind",
+   CurrentKeybind = "N",
+   HoldToInteract = false,
+   Flag = "KeybindNameESP",
+   Callback = function()
+       toggleNameESP(not espNameActive)
+   end,
+})
+
+local KeybindTracers = VisualTab:CreateKeybind({
+   Name = "Toggle Tracers Keybind",
+   CurrentKeybind = "T",
+   HoldToInteract = false,
+   Flag = "KeybindTracers",
+   Callback = function()
+       toggleTracers(not tracersActive)
+   end,
+})
+
+local KeybindInfiniteJump = PlayerTab:CreateKeybind({
+   Name = "Toggle Infinite Jump Keybind",
+   CurrentKeybind = "J",
+   HoldToInteract = false,
+   Flag = "KeybindInfiniteJump",
+   Callback = function()
+       infiniteJumpActive = not infiniteJumpActive
+       if not infiniteJumpActive and infiniteJumpConnection then
+           infiniteJumpConnection:Disconnect()
+       end
+   end,
+})
+
+local KeybindFly = PlayerTab:CreateKeybind({
+   Name = "Toggle Fly Keybind",
+   CurrentKeybind = "F",
+   HoldToInteract = false,
+   Flag = "KeybindFly",
+   Callback = function()
+       flyActive = not flyActive
+       if not flyActive and flyConnection then
+           flyConnection:Disconnect()
+       end
+   end,
+})
+
+local KeybindNoclip = PlayerTab:CreateKeybind({
+   Name = "Toggle Noclip Keybind",
+   CurrentKeybind = "N",
+   HoldToInteract = false,
+   Flag = "KeybindNoclip",
+   Callback = function()
+       noclipActive = not noclipActive
+       if not noclipActive and noclipConnection then
+           noclipConnection:Disconnect()
+           for _, v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+               if v:IsA("BasePart") then
+                   v.CanCollide = true
+               end
+           end
+       end
+   end,
+})
+
+local KeybindSpeed = SettingsTab:CreateKeybind({
+   Name = "Toggle Speed Keybind",
+   CurrentKeybind = "X",
+   HoldToInteract = false,
+   Flag = "KeybindSpeed",
+   Callback = function()
+       if desiredWalkSpeed == normalWalkSpeed then
+           desiredWalkSpeed = Slider.CurrentValue
+       else
+           desiredWalkSpeed = normalWalkSpeed
+       end
+       if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+           game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = desiredWalkSpeed
+       end
+   end,
+})
+
+local KeybindOpenUI = SettingsTab:CreateKeybind({
+    Name = "Open UI Keybind",
+    CurrentKeybind = "Insert",
+    HoldToInteract = false,
+    Flag = "KeybindOpenUI",
+    Callback = function()
+        Rayfield:Toggle()
+    end,
+})
+
+local AimbotCircleColor = Color3.fromRGB(255, 0, 0)
+
+local ColorPickerAimbotCircle = GunTab:CreateColorPicker({
+    Name = "Aimbot Circle Color",
+    Color = AimbotCircleColor,
+    Flag = "ColorPickerAimbotCircle",
+    Callback = function(Value)
+        AimbotCircleColor = Value
+        if not rainbowAimbotCircleActive then
+            AimbotCircle.Color = AimbotCircleColor
+        end
+    end,
+})
